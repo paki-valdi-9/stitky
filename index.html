@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Štítky na výrobky</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='7' width='26' height='18' rx='3' fill='%231f6b57'/%3E%3Cpath d='M16 7v18M3 16h26' stroke='white' stroke-width='1.5' stroke-dasharray='2 2'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f4f3ef; --surface: #ffffff; --text: #1d1c1a; --muted: #69665f;
+    --border: #e0ddd5; --field: #ffffff; --field-border: #cdc9bf;
+    --accent: #1f6b57; --accent-hover: #185746; --on-accent: #ffffff; --accent-soft: #e4f0eb;
+    --danger: #b42318; --danger-soft: #fdecea; --warn-bg: #fff4d9; --warn-text: #6f4500;
+    --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141413; --surface: #1d1d1b; --text: #ecebe6; --muted: #a29f97;
+      --border: #302f2b; --field: #242422; --field-border: #403e39;
+      --accent: #5dbf9f; --accent-hover: #78cfb2; --on-accent: #0b1f18; --accent-soft: #17302a;
+      --danger: #ff8f85; --danger-soft: #3a1d1a; --warn-bg: #33290f; --warn-text: #f3cf7a;
+      --shadow: none; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141413; --surface: #1d1d1b; --text: #ecebe6; --muted: #a29f97;
+    --border: #302f2b; --field: #242422; --field-border: #403e39;
+    --accent: #5dbf9f; --accent-hover: #78cfb2; --on-accent: #0b1f18; --accent-soft: #17302a;
+    --danger: #ff8f85; --danger-soft: #3a1d1a; --warn-bg: #33290f; --warn-text: #f3cf7a;
+    --shadow: none; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 16px 40px; }
+  .top h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; }
+  .top p { margin: 0 0 20px; color: var(--muted); max-width: 62ch; }
+
+  .layout {
+    display: grid; gap: 16px; align-items: start;
+    grid-template-areas: "batches" "actions" "preview" "settings";
+  }
+  @media (min-width: 880px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr) 360px;
+      grid-template-rows: auto auto auto 1fr;
+      grid-template-areas: "batches preview" "actions preview" "settings preview" ". preview";
+    }
+    .preview { position: sticky; top: 16px; }
+  }
+  .batches { grid-area: batches; }
+  .actions-card { grid-area: actions; }
+  .preview { grid-area: preview; }
+  .settings { grid-area: settings; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; box-shadow: var(--shadow); min-width: 0;
+  }
+  .card h2 { font-size: 1.05rem; margin: 0 0 12px; }
+
+  .batch { border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .batch-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; min-height: 28px; }
+  .batch-title { font-weight: 600; }
+  .grid4 { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 560px) { .grid4 { grid-template-columns: 1fr 1.5fr 1fr .7fr; } }
+  .batch-info { margin: 10px 0 0; font-size: .9rem; color: var(--muted); }
+  .batch-info.ok { color: var(--text); }
+  .batch-info.err { color: var(--danger); }
+
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field > span, .field > label { font-size: .85rem; color: var(--muted); }
+  input, select {
+    font: inherit; font-size: 16px; color: var(--text); background: var(--field);
+    border: 1px solid var(--field-border); border-radius: 8px; padding: 0 10px;
+    width: 100%; min-width: 0; height: 44px;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  [aria-invalid="true"] { border-color: var(--danger); background: var(--danger-soft); }
+
+  .btn {
+    font: inherit; font-weight: 600; border-radius: 10px; border: 1px solid var(--field-border);
+    background: var(--surface); color: var(--text); padding: 10px 16px; cursor: pointer; min-height: 44px;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn.ghost { background: transparent; }
+  .link { background: none; border: 0; color: var(--muted); font: inherit; font-size: .85rem; cursor: pointer; text-decoration: underline; padding: 4px; }
+  .link:hover { color: var(--danger); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .actions .btn { flex: 1 1 180px; }
+
+  .summary { margin: 0 0 12px; font-weight: 600; }
+  .print-mode { margin-bottom: 12px; }
+  .status { min-height: 1.5em; margin: 10px 0 0; font-size: .9rem; }
+  .status.error { color: var(--danger); }
+  .note { margin: 6px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); font-size: .9rem; }
+
+  .preview-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .preview-head h2 { margin: 0; }
+  .pager { display: flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .pager button {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--field-border);
+    background: var(--field); color: var(--text); cursor: pointer; font-size: 1.1rem; line-height: 1;
+  }
+  .pager button:disabled { opacity: .35; cursor: default; }
+  /* the preview is a sheet of paper, so it stays white in dark mode too */
+  .paper { display: block; width: 100%; height: auto; background: #fff; border-radius: 3px; box-shadow: 0 0 0 1px var(--border), 0 6px 20px rgba(0,0,0,.08); }
+  .caption { font-size: .85rem; color: var(--muted); margin: 14px 0 6px; }
+  .warn { background: var(--warn-bg); color: var(--warn-text); padding: 8px 10px; border-radius: 8px; font-size: .9rem; margin: 12px 0 0; }
+
+  details > summary { cursor: pointer; font-weight: 600; }
+  details.settings > summary { font-size: 1.05rem; }
+  details.settings[open] > summary { margin-bottom: 12px; }
+  details.sub { margin: 16px 0; border-top: 1px solid var(--border); padding-top: 12px; }
+  details.sub > summary { font-size: .95rem; }
+  details.sub[open] > summary { margin-bottom: 12px; }
+  .muted { color: var(--muted); font-size: .9rem; margin: 0 0 14px; }
+  .grid3 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); margin-bottom: 14px; }
+  .field small { color: var(--muted); font-size: .8rem; }
+  .stepper { display: flex; }
+  .stepper input { text-align: center; border-radius: 0; border-left: 0; border-right: 0; }
+  .stepper button {
+    width: 44px; flex: none; height: 44px; border: 1px solid var(--field-border);
+    background: var(--field); color: var(--text); font-size: 1.2rem; cursor: pointer;
+  }
+  .stepper button:first-child { border-radius: 8px 0 0 8px; }
+  .stepper button:last-child { border-radius: 0 8px 8px 0; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Štítky na výrobky</h1>
+    <p>Zadaj šaržu a dátum expirácie, stiahni PDF a vytlač ho na hárok etikiet 38 × 21 mm (65 etikiet na A4, na každú etiketu sa vytlačia 4 štítky).</p>
+  </header>
+
+  <div class="layout">
+    <section class="card batches">
+      <h2>Šarže</h2>
+      <div id="batches"></div>
+      <button type="button" id="add" class="btn ghost">+ Pridať ďalšiu šaržu</button>
+    </section>
+
+    <section class="card actions-card">
+      <p id="summary" class="summary"></p>
+      <div class="field print-mode">
+        <label for="s-printMode">Ako sa tlačí</label>
+        <select id="s-printMode">
+          <option value="fit">Prispôsobiť stránke – ako doteraz</option>
+          <option value="actual">Skutočná veľkosť (100 %)</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button type="button" id="download" class="btn primary">Stiahnuť PDF</button>
+        <button type="button" id="open" class="btn">Otvoriť a vytlačiť</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <p id="printNote" class="note"></p>
+    </section>
+
+    <section class="card preview">
+      <div class="preview-head">
+        <h2>Náhľad</h2>
+        <div class="pager">
+          <button type="button" id="prev" aria-label="Predchádzajúca strana">‹</button>
+          <span id="pageno">1 / 1</span>
+          <button type="button" id="next" aria-label="Ďalšia strana">›</button>
+        </div>
+      </div>
+      <svg id="page" class="paper" viewBox="0 0 210 297" role="img" aria-label="Náhľad strany A4"></svg>
+      <p class="caption">Detail ľavého horného rohu</p>
+      <svg id="detail" class="paper" role="img" aria-label="Detail ľavého horného rohu"></svg>
+      <p id="warn" class="warn" hidden></p>
+    </section>
+
+    <details class="card settings">
+      <summary>Nastavenie tlače a kalibrácia</summary>
+      <p class="muted">Ak text nesedí na etiketách, vytlač <strong>testovaciu stranu</strong> na obyčajný papier, prilož ju na hárok etikiet a pozri sa proti svetlu (napr. oproti oknu). Plné čiary majú sedieť na okrajoch etikiet, prerušované ukazujú, kde etiketu rozstrihnúť.</p>
+      <p class="muted" id="rulerNote"></p>
+      <div class="actions" style="margin-bottom:16px">
+        <button type="button" id="test" class="btn">Testovacia strana (PDF)</button>
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label for="s-offX">Posun doprava (mm)</label>
+          <div class="stepper">
+            <button type="button" data-for="offX" data-step="-0.5" aria-label="Posunúť doľava">−</button>
+            <input id="s-offX" type="number" step="0.5">
+            <button type="button" data-for="offX" data-step="0.5" aria-label="Posunúť doprava">+</button>
+          </div>
+          <small>záporné číslo = doľava</small>
+        </div>
+        <div class="field">
+          <label for="s-offY">Posun nadol (mm)</label>
+          <div class="stepper">
+            <button type="button" data-for="offY" data-step="-0.5" aria-label="Posunúť nahor">−</button>
+            <input id="s-offY" type="number" step="0.5">
+            <button type="button" data-for="offY" data-step="0.5" aria-label="Posunúť nadol">+</button>
+          </div>
+          <small>záporné číslo = nahor</small>
+        </div>
+        <div class="field">
+          <label for="s-fontSize">Veľkosť písma (pt)</label>
+          <div class="stepper">
+            <button type="button" data-for="fontSize" data-step="-0.5" aria-label="Menšie písmo">−</button>
+            <input id="s-fontSize" type="number" step="0.5">
+            <button type="button" data-for="fontSize" data-step="0.5" aria-label="Väčšie písmo">+</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="sub">
+        <summary>Rozmery hárka</summary>
+        <div class="grid3">
+          <div class="field"><label for="s-cols">Stĺpce etikiet</label><input id="s-cols" type="number" step="1"></div>
+          <div class="field"><label for="s-rows">Riadky etikiet</label><input id="s-rows" type="number" step="1"></div>
+          <div class="field"><label for="s-w">Šírka etikety (mm)</label><input id="s-w" type="number" step="0.1"></div>
+          <div class="field"><label for="s-h">Výška etikety (mm)</label><input id="s-h" type="number" step="0.1"></div>
+          <div class="field"><label for="s-left">Ľavý okraj (mm)</label><input id="s-left" type="number" step="0.1"></div>
+          <div class="field"><label for="s-top">Horný okraj (mm)</label><input id="s-top" type="number" step="0.1"></div>
+          <div class="field"><label for="s-gapX">Medzera medzi stĺpcami (mm)</label><input id="s-gapX" type="number" step="0.1"></div>
+          <div class="field"><label for="s-gapY">Medzera medzi riadkami (mm)</label><input id="s-gapY" type="number" step="0.1"></div>
+          <div class="field"><label for="s-split">Štítkov na jednu etiketu</label>
+            <select id="s-split">
+              <option value="2x2">4 (2 × 2)</option>
+              <option value="2x1">2 vedľa seba</option>
+              <option value="1x2">2 pod sebou</option>
+              <option value="1x1">1 (celá etiketa)</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <div class="actions">
+        <button type="button" id="reset" class="btn ghost">Obnoviť predvolené</button>
+      </div>
+      <p class="muted" style="margin:12px 0 0">Nastavenia si tento prehliadač zapamätá.</p>
+    </details>
+  </div>
+
+  <footer>Funguje aj bez internetu – nič sa nikam neodosiela.</footer>
+</div>
+
+<script id="core">
+// Layout + PDF writer. No DOM access here, so it can be tested on its own.
+const StitkyCore = (() => {
+  'use strict';
+
+  const PT = 72 / 25.4;             // PDF points per millimetre
+  const PAGE_W = 210, PAGE_H = 297; // A4
+  // "Fit to page" in the print dialog shrinks A4 to the printer's printable area.
+  // Measured from the old Word PDF that printed well: about 96.6 %.
+  const FIT_SCALE = 0.966;
+
+  // Sheet: 5 × 13 labels 38 × 21.2 mm with no gaps, centred on A4; each label split 2 × 2.
+  const DEFAULTS = { printMode: 'fit', offX: 0, offY: 0, fontSize: 7.5, cols: 5, rows: 13, w: 38, h: 21.2, left: 10, top: 10.7, gapX: 0, gapY: 0, split: '2x2' };
+  const LIMITS = { offX: [-20, 20], offY: [-20, 20], fontSize: [4, 14], cols: [1, 20], rows: [1, 40], w: [5, 210], h: [5, 297], left: [-20, 150], top: [-20, 250], gapX: [0, 50], gapY: [0, 50] };
+  const INTS = new Set(['cols', 'rows']);
+  const SPLITS = { '2x2': [2, 2], '2x1': [2, 1], '1x2': [1, 2], '1x1': [1, 1] };
+  const MODES = ['fit', 'actual'];
+
+  function isValidSetting(k, v) {
+    if (k === 'split') return Object.prototype.hasOwnProperty.call(SPLITS, v);
+    if (k === 'printMode') return MODES.includes(v);
+    if (typeof v !== 'number' || !Number.isFinite(v)) return false;
+    const [lo, hi] = LIMITS[k];
+    return v >= lo && v <= hi && (!INTS.has(k) || Number.isInteger(v));
+  }
+
+  // ---------- Helvetica metrics + WinAnsi encoding ----------
+  // Advance widths (1/1000 em) for character codes 32..126.
+  const HELV = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,
+    667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    278,278,278,469,556,333,
+    556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+    334,260,334,584];
+  const WIN = { 0x20AC: 0x80, 0x201A: 0x82, 0x0192: 0x83, 0x201E: 0x84, 0x2026: 0x85, 0x2020: 0x86, 0x2021: 0x87, 0x02C6: 0x88,
+    0x2030: 0x89, 0x0160: 0x8A, 0x2039: 0x8B, 0x0152: 0x8C, 0x017D: 0x8E, 0x2018: 0x91, 0x2019: 0x92, 0x201C: 0x93,
+    0x201D: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97, 0x02DC: 0x98, 0x2122: 0x99, 0x0161: 0x9A, 0x203A: 0x9B,
+    0x0153: 0x9C, 0x017E: 0x9E, 0x0178: 0x9F };
+  const WIN_W = { 0x8A: 667, 0x9A: 500, 0x8E: 611, 0x9E: 500, 0x96: 556, 0x97: 1000, 0x85: 1000 };
+
+  function winCode(ch) {
+    const c = ch.codePointAt(0);
+    if (c < 0x80 || (c >= 0xA0 && c <= 0xFF)) return c;
+    return WIN[c] || 0x3F; // '?'
+  }
+  function textWidth(str) {
+    let w = 0;
+    for (const ch of str) {
+      const c = winCode(ch);
+      w += c >= 32 && c <= 126 ? HELV[c - 32] : (WIN_W[c] || 556);
+    }
+    return w;
+  }
+  function pdfString(str) {
+    let out = '(';
+    for (const ch of str) {
+      const c = winCode(ch);
+      if (c === 0x28 || c === 0x29 || c === 0x5C) out += '\\' + String.fromCharCode(c);
+      else if (c < 0x20 || c > 0x7E) out += '\\' + c.toString(8).padStart(3, '0');
+      else out += String.fromCharCode(c);
+    }
+    return out + ')';
+  }
+
+  // ---------- layout (mm, origin top-left) ----------
+  function stickers(s) {
+    const out = [];
+    for (let r = 0; r < s.rows; r++)
+      for (let c = 0; c < s.cols; c++)
+        out.push({ x: s.left + s.offX + c * (s.w + s.gapX), y: s.top + s.offY + r * (s.h + s.gapY), w: s.w, h: s.h });
+    return out;
+  }
+  // Small labels, row by row across the page (same order as the old Word table).
+  function cells(s) {
+    const [nx, ny] = SPLITS[s.split], cw = s.w / nx, ch = s.h / ny, out = [];
+    for (let r = 0; r < s.rows; r++)
+      for (let j = 0; j < ny; j++)
+        for (let c = 0; c < s.cols; c++)
+          for (let i = 0; i < nx; i++)
+            out.push({
+              x: s.left + s.offX + c * (s.w + s.gapX) + i * cw,
+              y: s.top + s.offY + r * (s.h + s.gapY) + j * ch,
+              w: cw, h: ch,
+            });
+    return out;
+  }
+  const perPage = s => s.cols * s.rows * SPLITS[s.split][0] * SPLITS[s.split][1];
+  const gridWidth = s => s.cols * s.w + (s.cols - 1) * s.gapX;
+
+  // Lines are left-aligned to each other; the block is centred in its label.
+  function textBlock(lines, s) {
+    const size = s.fontSize, lead = size * 1.2;
+    const ascent = /[^\x00-\x7F]/.test(lines[0]) ? 0.93 : 0.72; // Š has a caron above cap height
+    const width = Math.max(...lines.map(t => textWidth(t))) * size / 1000;
+    const height = ascent * size + lead * (lines.length - 1) + 0.02 * size;
+    return { size, w: width / PT, h: height / PT, ascent: ascent * size / PT, lead: lead / PT };
+  }
+  function placeText(lines, s) {
+    const b = textBlock(lines, s);
+    const pos = cells(s).map(c => ({ x: c.x + (c.w - b.w) / 2, y: c.y + (c.h - b.h) / 2 + b.ascent }));
+    return { b, pos };
+  }
+  const linesOf = b => [`Š: ${b.num || '…'}`, `EXP: ${b.month || 'MM'}/${b.year || 'RR'}`];
+
+  // ---------- PDF ----------
+  const num = v => { const r = Math.round(v * 100) / 100; return Object.is(r, -0) ? '0' : String(r); };
+
+  function textOps(lines, s) {
+    const { b, pos } = placeText(lines, s);
+    const strs = lines.map(pdfString), lead = num(-b.lead * PT);
+    const ops = ['BT', `/F1 ${num(b.size)} Tf`];
+    for (const p of pos) {
+      ops.push(`1 0 0 1 ${num(p.x * PT)} ${num((PAGE_H - p.y) * PT)} Tm ${strs[0]} Tj`);
+      for (let i = 1; i < strs.length; i++) ops.push(`0 ${lead} Td ${strs[i]} Tj`);
+    }
+    ops.push('ET');
+    return ops.join('\n');
+  }
+  function guideOps(s) {
+    const [nx, ny] = SPLITS[s.split], X = v => num(v * PT), Y = v => num((PAGE_H - v) * PT);
+    const ops = ['q', '0.3 w', '0 G'];
+    const all = stickers(s);
+    for (const t of all) ops.push(`${X(t.x)} ${Y(t.y + t.h)} ${X(t.w)} ${X(t.h)} re S`);
+    ops.push('0.45 G', '[2 2] 0 d');
+    for (const t of all) {
+      for (let i = 1; i < nx; i++) { const x = X(t.x + i * t.w / nx); ops.push(`${x} ${Y(t.y)} m ${x} ${Y(t.y + t.h)} l S`); }
+      for (let j = 1; j < ny; j++) { const y = Y(t.y + j * t.h / ny); ops.push(`${X(t.x)} ${y} m ${X(t.x + t.w)} ${y} l S`); }
+    }
+    ops.push('Q');
+    return ops.join('\n');
+  }
+  function noteOps(text, s) {
+    return `BT /F1 7 Tf 1 0 0 1 ${num(s.left * PT)} ${num((PAGE_H - 6) * PT)} Tm ${pdfString(text)} Tj ET`;
+  }
+
+  // parts: [{ ops, pages }]; every page of a part shares one content stream.
+  function buildPdf(parts, s) {
+    const W = PAGE_W * PT, H = PAGE_H * PT;
+    // In "fit" mode enlarge around the page centre so the printer's shrink brings it back to true size.
+    let pre = '', post = '';
+    if (s.printMode === 'fit') {
+      const a = 1 / FIT_SCALE;
+      pre = `q ${a.toFixed(5)} 0 0 ${a.toFixed(5)} ${num(W / 2 * (1 - a))} ${num(H / 2 * (1 - a))} cm\n`;
+      post = '\nQ';
+    }
+    const objs = [null, null, null, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'];
+    const kids = [];
+    for (const part of parts) {
+      const body = pre + part.ops + post;
+      const content = objs.push(`<< /Length ${body.length} >>\nstream\n${body}\nendstream`) - 1;
+      for (let i = 0; i < part.pages; i++)
+        kids.push(objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${num(W)} ${num(H)}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${content} 0 R >>`) - 1);
+    }
+    // In "actual" mode ask the PDF viewer to default to 100 % when printing.
+    const prefs = s.printMode === 'actual' ? ' /ViewerPreferences << /PrintScaling /None >>' : '';
+    objs[1] = `<< /Type /Catalog /Pages 2 0 R${prefs} >>`;
+    objs[2] = `<< /Type /Pages /Kids [${kids.map(k => k + ' 0 R').join(' ')}] /Count ${kids.length} >>`;
+
+    let pdf = '%PDF-1.6\n%âãÏÓ\n';
+    const offsets = [];
+    for (let i = 1; i < objs.length; i++) {
+      offsets.push(pdf.length);
+      pdf += `${i} 0 obj\n${objs[i]}\nendobj\n`;
+    }
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objs.length}\n0000000000 65535 f \n`;
+    pdf += offsets.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('');
+    pdf += `trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+
+    const bytes = new Uint8Array(pdf.length);
+    for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i);
+    return bytes;
+  }
+
+  function labelsPdf(batches, s) {
+    return buildPdf(batches.map(b => ({ ops: textOps(linesOf(b), s), pages: b.pages })), s);
+  }
+  function testPdf(batch, s) {
+    const n = s.cols, word = n === 1 ? 'etiketa' : n <= 4 ? 'etikety' : 'etikiet';
+    const mode = s.printMode === 'fit' ? 'prispôsobenie strane' : '100 %';
+    const note = `TESTOVACIA STRANA – šírka ${n} ${word} = ${num(gridWidth(s))} mm – režim: ${mode} – posun X ${s.offX} mm, Y ${s.offY} mm`;
+    return buildPdf([{ ops: [guideOps(s), textOps(linesOf(batch), s), noteOps(note, s)].join('\n'), pages: 1 }], s);
+  }
+
+  return { PT, PAGE_W, PAGE_H, FIT_SCALE, DEFAULTS, LIMITS, SPLITS, isValidSetting, textWidth, pdfString,
+    stickers, cells, perPage, gridWidth, textBlock, placeText, linesOf, buildPdf, labelsPdf, testPdf };
+})();
+</script>
+
+<script>
+(() => {
+  'use strict';
+  const C = StitkyCore;
+  const { PT, PAGE_W, PAGE_H, DEFAULTS, LIMITS, SPLITS } = C;
+  const MAX_PAGES = 99;
+  const KEY = 'stitky-nastavenia-v1';
+  const MONTHS = ['január', 'február', 'marec', 'apríl', 'máj', 'jún', 'júl', 'august', 'september', 'október', 'november', 'december'];
+
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
+  const plural = (n, one, few, many) => `${n} ${n === 1 ? one : n >= 2 && n <= 4 ? few : many}`;
+
+  // ---------- settings ----------
+  function loadSettings() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { /* no storage */ }
+    const s = { ...DEFAULTS };
+    for (const k of Object.keys(DEFAULTS)) if (C.isValidSetting(k, saved[k])) s[k] = saved[k];
+    return s;
+  }
+  function saveSettings() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* no storage */ }
+  }
+  let S = loadSettings();
+
+  // ---------- batches ----------
+  const batchesEl = $('#batches');
+  const YEAR = new Date().getFullYear();
+  let showErrors = false;
+  let pageIdx = 0;
+
+  function addBatch() {
+    const el = document.createElement('div');
+    el.className = 'batch';
+    const months = MONTHS.map((m, i) => { const v = String(i + 1).padStart(2, '0'); return `<option value="${v}">${v} – ${m}</option>`; }).join('');
+    let years = '';
+    for (let y = YEAR; y <= YEAR + 10; y++) years += `<option value="${String(y).slice(-2)}">${y}</option>`;
+    el.innerHTML = `
+      <div class="batch-head">
+        <span class="batch-title"></span>
+        <button type="button" class="link remove">Odstrániť</button>
+      </div>
+      <div class="grid4">
+        <label class="field"><span>Číslo šarže</span>
+          <input class="num" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="napr. 3"></label>
+        <label class="field"><span>Mesiac expirácie</span>
+          <select class="month"><option value="">Vyber…</option>${months}</select></label>
+        <label class="field"><span>Rok expirácie</span>
+          <select class="year"><option value="">Vyber…</option>${years}</select></label>
+        <label class="field"><span>Počet strán</span>
+          <input class="pages" type="number" inputmode="numeric" min="1" max="${MAX_PAGES}" step="1" value="1"></label>
+      </div>
+      <p class="batch-info"></p>`;
+    $('.num', el).addEventListener('input', e => {
+      const clean = e.target.value.replace(/\D/g, '').slice(0, 6);
+      if (clean !== e.target.value) e.target.value = clean;
+    });
+    $('.remove', el).addEventListener('click', () => { el.remove(); refresh(); });
+    batchesEl.append(el);
+    return el;
+  }
+
+  function readBatch(el) {
+    const num = $('.num', el).value.trim();
+    const month = $('.month', el).value;
+    const year = $('.year', el).value;
+    const pagesRaw = $('.pages', el).value.trim();
+    const pages = Number(pagesRaw);
+    const errors = {};
+    if (!/^\d{1,6}$/.test(num)) errors.num = 'Zadaj číslo šarže (len číslice, najviac 6).';
+    if (!month) errors.month = 'Vyber mesiac expirácie.';
+    if (!year) errors.year = 'Vyber rok expirácie.';
+    if (pagesRaw === '' || !Number.isInteger(pages) || pages < 1 || pages > MAX_PAGES) errors.pages = `Počet strán musí byť od 1 do ${MAX_PAGES}.`;
+    return { el, num, month, year, pages: errors.pages ? 1 : pages, errors, ok: Object.keys(errors).length === 0 };
+  }
+
+  // ---------- preview ----------
+  const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const f3 = v => Number(v.toFixed(3));
+
+  function sheetSvg(lines, s) {
+    const [nx, ny] = SPLITS[s.split];
+    const all = C.stickers(s);
+    let out = `<rect x="0" y="0" width="${PAGE_W}" height="${PAGE_H}" fill="#fff"/>`;
+    out += '<g fill="none" stroke="#b5b1a8" stroke-width="0.25">';
+    for (const t of all) out += `<rect x="${f3(t.x)}" y="${f3(t.y)}" width="${f3(t.w)}" height="${f3(t.h)}" rx="0.6"/>`;
+    out += '</g><g stroke="#d8d4cc" stroke-width="0.2" stroke-dasharray="0.8 0.8">';
+    for (const t of all) {
+      for (let i = 1; i < nx; i++) { const x = f3(t.x + i * t.w / nx); out += `<line x1="${x}" y1="${f3(t.y)}" x2="${x}" y2="${f3(t.y + t.h)}"/>`; }
+      for (let j = 1; j < ny; j++) { const y = f3(t.y + j * t.h / ny); out += `<line x1="${f3(t.x)}" y1="${y}" x2="${f3(t.x + t.w)}" y2="${y}"/>`; }
+    }
+    out += '</g>';
+    const { b, pos } = C.placeText(lines, s);
+    const first = esc(lines[0]), rest = lines.slice(1).map(esc);
+    out += `<g font-family="Helvetica, Arial, sans-serif" font-size="${f3(b.size / PT)}" fill="#111">`;
+    for (const p of pos) {
+      const x = f3(p.x);
+      out += `<text x="${x}" y="${f3(p.y)}">${first}${rest.map(t => `<tspan x="${x}" dy="${f3(b.lead)}">${t}</tspan>`).join('')}</text>`;
+    }
+    return out + '</g>';
+  }
+
+  function layoutWarnings(s, lines) {
+    const msgs = [];
+    const [nx, ny] = SPLITS[s.split];
+    const b = C.textBlock(lines, s);
+    if (b.w > s.w / nx - 1 || b.h > s.h / ny - 1) msgs.push('Text je väčší ako štítok – zmenši písmo.');
+    const right = s.left + s.offX + C.gridWidth(s);
+    const bottom = s.top + s.offY + s.rows * s.h + (s.rows - 1) * s.gapY;
+    if (s.left + s.offX < 0 || s.top + s.offY < 0 || right > PAGE_W + 0.01 || bottom > PAGE_H + 0.01)
+      msgs.push('Rozloženie presahuje okraj papiera – skontroluj rozmery hárka a posun.');
+    return msgs;
+  }
+
+  // ---------- refresh ----------
+  function refresh() {
+    const batches = $$('.batch', batchesEl).map(readBatch);
+    const each = C.perPage(S);
+    if (showErrors && batches.every(b => b.ok)) {
+      showErrors = false;
+      setStatus('');
+    }
+
+    batches.forEach((b, i) => {
+      $('.batch-title', b.el).textContent = batches.length > 1 ? `Šarža ${i + 1}` : 'Šarža';
+      $('.remove', b.el).hidden = batches.length === 1;
+      for (const k of ['num', 'month', 'year', 'pages']) {
+        const field = $('.' + k, b.el);
+        if (showErrors && b.errors[k]) field.setAttribute('aria-invalid', 'true');
+        else field.removeAttribute('aria-invalid');
+      }
+      const info = $('.batch-info', b.el);
+      if (b.ok) {
+        const [l1, l2] = C.linesOf(b);
+        info.className = 'batch-info ok';
+        info.textContent = `${l1} · ${l2} · ${plural(b.pages, 'strana', 'strany', 'strán')} = ${plural(b.pages * each, 'štítok', 'štítky', 'štítkov')}`;
+      } else if (showErrors) {
+        info.className = 'batch-info err';
+        info.textContent = Object.values(b.errors).join(' ');
+      } else {
+        info.className = 'batch-info';
+        info.textContent = 'Doplň číslo šarže a dátum expirácie.';
+      }
+    });
+
+    const totalPages = batches.reduce((n, b) => n + b.pages, 0);
+    $('#summary').textContent =
+      `${plural(batches.length, 'šarža', 'šarže', 'šarží')} · ${plural(totalPages, 'strana', 'strany', 'strán')} · ${plural(totalPages * each, 'štítok', 'štítky', 'štítkov')}`;
+
+    $('#printNote').innerHTML = S.printMode === 'fit'
+      ? '<strong>Pri tlači</strong> nechaj mierku <strong>„Prispôsobiť stránke“</strong> / „Prispôsobiť oblasti tlače“ – presne ako doteraz. PDF je na to pripravené.'
+      : '<strong>Pri tlači</strong> nastav mierku <strong>100 %</strong> / „Skutočná veľkosť“ – nie „Prispôsobiť stránke“.';
+    const n = S.cols, word = n === 1 ? 'etikety' : 'etikiet';
+    $('#rulerNote').innerHTML = `<strong>Kontrola mierky:</strong> na vytlačenej testovacej strane zmeraj pravítkom šírku ${n} ${word} vedľa seba – musí to byť ${C.gridWidth(S).toLocaleString('sk')} mm. Ak to nesedí, v časti „Ako sa tlačí“ je zvolený iný spôsob, než aký použila tlač.`;
+
+    // preview
+    const pageOwners = batches.flatMap(b => Array(b.pages).fill(b));
+    pageIdx = Math.min(Math.max(pageIdx, 0), pageOwners.length - 1);
+    const lines = C.linesOf(pageOwners[pageIdx]);
+    const markup = sheetSvg(lines, S);
+    $('#page').innerHTML = markup;
+    const detail = $('#detail');
+    const dw = Math.min(PAGE_W, Math.max(30, S.left + S.offX + 2 * S.w + S.gapX + 4));
+    const dh = Math.min(PAGE_H, Math.max(20, S.top + S.offY + 2 * S.h + S.gapY + 4));
+    detail.setAttribute('viewBox', `0 0 ${f3(dw)} ${f3(dh)}`);
+    detail.innerHTML = markup;
+    $('#pageno').textContent = `${pageIdx + 1} / ${pageOwners.length}`;
+    $('#prev').disabled = pageIdx === 0;
+    $('#next').disabled = pageIdx >= pageOwners.length - 1;
+
+    const warns = layoutWarnings(S, lines);
+    const w = $('#warn');
+    w.hidden = warns.length === 0;
+    w.textContent = warns.join(' ');
+  }
+
+  // ---------- output ----------
+  function setStatus(msg, kind) {
+    const el = $('#status');
+    el.textContent = msg;
+    el.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  function deliver(bytes, filename, mode) {
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+    let opened = false;
+    if (mode === 'open') opened = !!window.open(url, '_blank');
+    if (!opened) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.append(a);
+      a.click();
+      a.remove();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
+    return mode !== 'open' || opened;
+  }
+
+  function generate(mode) {
+    const batches = $$('.batch', batchesEl).map(readBatch);
+    const bad = batches.find(b => !b.ok);
+    if (bad) {
+      showErrors = true;
+      refresh();
+      const field = $('[aria-invalid="true"]', bad.el);
+      if (field) field.focus();
+      setStatus('Skontroluj zvýraznené polia.', 'error');
+      return;
+    }
+    showErrors = false;
+    refresh();
+    const name = 'stitky_' + batches.map(b => b.num).join('_').slice(0, 60) + '.pdf';
+    const pages = batches.reduce((n, b) => n + b.pages, 0);
+    const ok = deliver(C.labelsPdf(batches, S), name, mode);
+    setStatus(ok
+      ? `Hotovo – PDF má ${plural(pages, 'stranu', 'strany', 'strán')} (${plural(pages * C.perPage(S), 'štítok', 'štítky', 'štítkov')}).`
+      : 'Prehliadač zablokoval nové okno – PDF sa namiesto toho stiahlo.');
+  }
+
+  function testPage() {
+    const batch = $$('.batch', batchesEl).map(readBatch).find(b => b.ok) || { num: '123456', month: '12', year: '34' };
+    deliver(C.testPdf(batch, S), 'testovacia_strana.pdf', 'download');
+    setStatus('Testovacia strana sa stiahla – vytlač ju na obyčajný papier.');
+  }
+
+  // ---------- settings form ----------
+  const settingInputs = Object.keys(DEFAULTS).map(k => [k, $('#s-' + k)]);
+  function fillSettings() {
+    for (const [k, el] of settingInputs) { el.value = S[k]; el.removeAttribute('aria-invalid'); }
+  }
+  for (const [k, el] of settingInputs) {
+    el.addEventListener('input', () => {
+      const v = el.tagName === 'SELECT' ? el.value : Number(el.value);
+      if (el.value !== '' && C.isValidSetting(k, v)) {
+        S[k] = v;
+        el.removeAttribute('aria-invalid');
+        saveSettings();
+        refresh();
+      } else {
+        el.setAttribute('aria-invalid', 'true');
+      }
+    });
+  }
+  for (const btn of $$('.stepper button')) {
+    btn.addEventListener('click', () => {
+      const k = btn.dataset.for, [lo, hi] = LIMITS[k];
+      const v = Math.min(hi, Math.max(lo, Math.round((S[k] + Number(btn.dataset.step)) * 100) / 100));
+      const el = $('#s-' + k);
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+  $('#reset').addEventListener('click', () => {
+    S = { ...DEFAULTS };
+    saveSettings();
+    fillSettings();
+    refresh();
+    setStatus('Nastavenia sú obnovené.');
+  });
+
+  // ---------- wiring ----------
+  batchesEl.addEventListener('input', refresh);
+  batchesEl.addEventListener('change', refresh);
+  $('#add').addEventListener('click', () => { const el = addBatch(); refresh(); $('.num', el).focus(); });
+  $('#download').addEventListener('click', () => generate('download'));
+  $('#open').addEventListener('click', () => generate('open'));
+  $('#test').addEventListener('click', testPage);
+  $('#prev').addEventListener('click', () => { pageIdx--; refresh(); });
+  $('#next').addEventListener('click', () => { pageIdx++; refresh(); });
+
+  fillSettings();
+  addBatch();
+  refresh();
+})();
+</script>
+</body>
+</html>
